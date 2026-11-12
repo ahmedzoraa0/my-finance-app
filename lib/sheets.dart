@@ -13,9 +13,9 @@ class Account {
 }
 
 class Tx {
-  final String date, type, category, desc, from, to;
+  final String id, date, type, category, desc, from, to;
   final double amount;
-  const Tx(this.date, this.type, this.category, this.desc, this.from, this.to, this.amount);
+  const Tx(this.id, this.date, this.type, this.category, this.desc, this.from, this.to, this.amount);
 }
 
 class SheetsRepo {
@@ -117,8 +117,38 @@ class SheetsRepo {
     String c(List<Object?> row, int i) => i < row.length ? '${row[i]}' : '';
     return [
       for (final row in (r.values ?? const <List<Object?>>[]).reversed)
-        if (row.length > 7) Tx(c(row, 1), c(row, 2), c(row, 3), c(row, 4), c(row, 5), c(row, 6), _n(row[7]))
+        if (row.length > 7) Tx(c(row, 0), c(row, 1), c(row, 2), c(row, 3), c(row, 4), c(row, 5), c(row, 6), _n(row[7]))
     ];
+  }
+
+  Future<int> _rowOf(String txId) async {
+    final r = await api.spreadsheets.values.get(id!, "'المعاملات'!A:A");
+    final rows = r.values ?? const <List<Object?>>[];
+    for (var i = 1; i < rows.length; i++) {
+      if (rows[i].isNotEmpty && '${rows[i][0]}' == txId) return i + 1;
+    }
+    throw Exception('الحركة غير موجودة في الشيت، حدّث الشاشة');
+  }
+
+  Future<void> delete(String txId) async {
+    final row = await _rowOf(txId);
+    await api.spreadsheets.batchUpdate(
+      s.BatchUpdateSpreadsheetRequest(requests: [
+        s.Request(deleteDimension: s.DeleteDimensionRequest(
+            range: s.DimensionRange(sheetId: 0, dimension: 'ROWS', startIndex: row - 1, endIndex: row)))
+      ]),
+      id!,
+    );
+  }
+
+  Future<void> update(String txId, {required DateTime date, required String type, required String category,
+      required String desc, required String from, required String to, required double amount}) async {
+    final row = await _rowOf(txId);
+    await api.spreadsheets.values.update(
+      s.ValueRange(values: [[ymd(date), type, category, desc, from, to, amount]]),
+      id!, "'المعاملات'!B$row:H$row",
+      valueInputOption: 'USER_ENTERED',
+    );
   }
 
   Future<void> add({required DateTime date, required String type, required String category, required String desc,
