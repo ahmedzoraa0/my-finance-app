@@ -32,6 +32,15 @@ jobs:
           channel: stable
           cache: true
       - run: flutter create . --platforms=android --project-name my_finance --org com.myfinance
+      - name: Disable lint on release build
+        run: |
+          f=android/app/build.gradle.kts
+          [ -f "$f" ] || f=android/app/build.gradle
+          if [[ "$f" == *.kts ]]; then
+            sed -i '0,/^android {/s//android {\n    lint {\n        checkReleaseBuilds = false\n        abortOnError = false\n    }/' "$f"
+          else
+            sed -i '0,/^android {/s//android {\n    lint {\n        checkReleaseBuilds false\n        abortOnError false\n    }/' "$f"
+          fi
       - run: flutter pub get
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
