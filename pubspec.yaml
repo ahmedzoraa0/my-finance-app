@@ -1,0 +1,15 @@
+name: my_finance
+description: My Finance - إدارة مالية شخصية
+publish_to: none
+version: 0.1.0+1
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: any
+  google_fonts: ^6.2.1
+flutter:
+  uses-material-design: true
